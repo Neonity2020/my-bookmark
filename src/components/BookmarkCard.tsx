@@ -1,60 +1,35 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-// 其他导入...
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { FaviconImage } from '@/components/Favicon'
 
 interface BookmarkCardProps {
   id: string
   title: string
   description: string
   url: string
+  category: string
   onEdit: (id: string, newData: { title: string; description: string; url: string }) => void
   onDelete: (id: string) => void
 }
 
-const useLocalStorage = (key: string, initialValue: any) => {
-  const [state, setState] = useState(() => {
-    try {
-      const value = window.localStorage.getItem(key)
-      return value ? JSON.parse(value) : initialValue
-    } catch (error) {
-      console.log(error)
-      return initialValue
-    }
-  })
-
-  const setValue = (value: any) => {
-    try {
-      const valueToStore = value instanceof Function ? value(state) : value
-      setState(valueToStore)
-      window.localStorage.setItem(key, JSON.stringify(valueToStore))
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  return [state, setValue]
-}
-
-export function BookmarkCard({ id, title, description, url, onEdit, onDelete }: BookmarkCardProps) {
+export function BookmarkCard({ id, title, description, url, category, onEdit, onDelete }: BookmarkCardProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(title)
-  const [editedDescription, setEditedDescription] = useState(description)
-  const [editedUrl, setEditedUrl] = useState(url)
+  const [editedData, setEditedData] = useState({ title, description, url, category })
 
   const handleSave = () => {
-    onEdit(id, { title: editedTitle, description: editedDescription, url: editedUrl })
+    onEdit(id, editedData)
     setIsEditing(false)
   }
 
+  const faviconUrl = `${new URL(url).origin}/favicon.ico` 
+
   const handleCancel = () => {
-    setEditedTitle(title)
-    setEditedDescription(description)
-    setEditedUrl(url)
+    setEditedData({ title, description, url, category })
     setIsEditing(false)
   }
 
@@ -63,21 +38,21 @@ export function BookmarkCard({ id, title, description, url, onEdit, onDelete }: 
       <Card>
         <CardHeader>
           <Input 
-            value={editedTitle} 
-            onChange={(e) => setEditedTitle(e.target.value)} 
+            value={editedData.title}
+            onChange={(e) => setEditedData({ ...editedData, title: e.target.value })} 
             placeholder="网站标题"
           />
         </CardHeader>
         <CardContent>
           <Textarea 
-            value={editedDescription} 
-            onChange={(e) => setEditedDescription(e.target.value)} 
+            value={editedData.description} 
+            onChange={(e) => setEditedData({ ...editedData, description: e.target.value })} 
             placeholder="网站描述"
             className="mb-2"
           />
           <Input 
-            value={editedUrl} 
-            onChange={(e) => setEditedUrl(e.target.value)} 
+            value={editedData.url} 
+            onChange={(e) => setEditedData({ ...editedData, url: e.target.value })} 
             placeholder="网站URL"
           />
         </CardContent>
@@ -91,18 +66,54 @@ export function BookmarkCard({ id, title, description, url, onEdit, onDelete }: 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-          {url}
-        </a>
+      <CardContent className="p-4">
+        {isEditing ? (
+          <div className="space-y-2">
+            <Input
+              value={editedData.title}
+              onChange={(e) => setEditedData({ ...editedData, title: e.target.value })}
+              placeholder="标题"
+            />
+            <Input
+              value={editedData.url}
+              onChange={(e) => setEditedData({ ...editedData, url: e.target.value })}
+              placeholder="URL"
+            />
+            <Input
+              value={editedData.description}
+              onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
+              placeholder="描述"
+            />
+            <Input
+              value={editedData.category}
+              onChange={(e) => setEditedData({ ...editedData, category: e.target.value })}
+              placeholder="分类"
+            />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center space-x-2 mb-2">
+              <FaviconImage url={url} />
+              <h3 className="text-lg font-semibold">{title}</h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-2">{description}</p>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{url}</a>
+            <p className="text-sm text-gray-400 mt-2">分类: {category}</p>
+          </>
+        )}
       </CardContent>
-      <CardFooter>
-        <Button variant="outline" onClick={() => setIsEditing(true)}>编辑</Button>
-        <Button onClick={() => onDelete(id)}>删除</Button>
+      <CardFooter className="p-4">
+        {isEditing ? (
+          <>
+            <Button onClick={handleSave} className="mr-2">保存</Button>
+            <Button variant="outline" onClick={() => setIsEditing(false)}>取消</Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={() => setIsEditing(true)} className="mr-2">编辑</Button>
+            <Button variant="destructive" onClick={() => onDelete(id)}>删除</Button>
+          </>
+        )}
       </CardFooter>
     </Card>
   )

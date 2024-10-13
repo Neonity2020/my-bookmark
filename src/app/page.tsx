@@ -12,6 +12,7 @@ interface Bookmark {
   title: string;
   description: string;
   url: string;
+  category: string;
 }
 
 const useLocalStorage = <T,>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
@@ -47,48 +48,61 @@ export default function Home() {
       id: '1',
       title: '百度',
       description: '中国最大的搜索引擎',
-      url: 'https://www.baidu.com'
+      url: 'https://www.baidu.com',
+      category: '搜索引擎'
     },
     {
       id: '2',
       title: '淘宝',
       description: '中国领先的电子商务平台',
-      url: 'https://www.taobao.com'
+      url: 'https://www.taobao.com',
+      category: '购物'
     },
     {
       id: '3',
       title: '知乎',
       description: '中文互联网高质量的问答社区和创作者聚集原创内容平台',
-      url: 'https://www.zhihu.com'
+      url: 'https://www.zhihu.com',
+      category: '社交'
     },
     {
       id: '4',
       title: 'GitHub',
       description: '全球最大的代码托管平台',
-      url: 'https://github.com'
+      url: 'https://github.com',
+      category: '开发'
     },
     {
       id: '5',
       title: 'bilibili',
       description: '国内知名的视频弹幕网站',
-      url: 'https://www.bilibili.com'
+      url: 'https://www.bilibili.com',
+      category: '娱乐'
     }
   ];
 
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bookmarks', initialBookmarks);
-  const [newBookmark, setNewBookmark] = useState({ title: '', description: '', url: '' })
+  const [newBookmark, setNewBookmark] = useState({ title: '', description: '', url: '', category: '' });
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    const uniqueCategories = Array.from(new Set(bookmarks.map(bookmark => bookmark.category)));
+    setCategories(uniqueCategories);
+  }, [bookmarks]);
+
+  useEffect(() => {
+    // 模拟数据加载
     setIsLoaded(true);
   }, []);
 
   const handleAddBookmark = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const id = Date.now().toString()
-    setBookmarks((prevBookmarks: Bookmark[]) => [...prevBookmarks, { id, ...newBookmark }])
-    setNewBookmark({ title: '', description: '', url: '' })
-  }
+    e.preventDefault();
+    const id = Date.now().toString();
+    setBookmarks((prevBookmarks: Bookmark[]) => [...prevBookmarks, { id, ...newBookmark }]);
+    setNewBookmark({ title: '', description: '', url: '', category: '' });
+  };
 
   const handleEdit = (id: string, newData: Partial<Bookmark>) => {
     setBookmarks(bookmarks.map(bookmark => 
@@ -99,6 +113,10 @@ export default function Home() {
   const handleDelete = (id: string) => {
     setBookmarks(bookmarks.filter(bookmark => bookmark.id !== id))
   }
+
+  const filteredBookmarks = selectedCategory
+    ? bookmarks.filter(bookmark => bookmark.category === selectedCategory)
+    : bookmarks;
 
   return (
     <div className="container mx-auto px-4">
@@ -139,15 +157,42 @@ export default function Home() {
                   onChange={(e) => setNewBookmark({...newBookmark, description: e.target.value})}
                 />
               </div>
+              <div>
+                <Label htmlFor="category">分类</Label>
+                <Input
+                  id="category"
+                  value={newBookmark.category}
+                  onChange={(e) => setNewBookmark({...newBookmark, category: e.target.value})}
+                  required
+                />
+              </div>
               <Button type="submit">添加</Button>
             </form>
           </DialogContent>
         </Dialog>
       </nav>
       
+      <div className="flex space-x-2 mb-4">
+        <Button
+          variant={selectedCategory === null ? "default" : "outline"}
+          onClick={() => setSelectedCategory(null)}
+        >
+          全部
+        </Button>
+        {categories.map(category => (
+          <Button
+            key={category}
+            variant={selectedCategory === category ? "default" : "outline"}
+            onClick={() => setSelectedCategory(category)}
+          >
+            {category}
+          </Button>
+        ))}
+      </div>
+
       {isLoaded && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-          {bookmarks.map(bookmark => (
+          {filteredBookmarks.map(bookmark => (
             <BookmarkCard 
               key={bookmark.id}
               {...bookmark}
