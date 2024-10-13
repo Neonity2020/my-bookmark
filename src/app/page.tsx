@@ -12,7 +12,7 @@ interface Bookmark {
   title: string;
   description: string;
   url: string;
-  category: string;
+  categories: string[]; // 确保这是一个非空数组
 }
 
 const useLocalStorage = <T,>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
@@ -49,46 +49,47 @@ export default function Home() {
       title: '百度',
       description: '中国最大的搜索引擎',
       url: 'https://www.baidu.com',
-      category: '搜索引擎'
+      categories: ['搜索引擎', '网络服务']
     },
     {
       id: '2',
       title: '淘宝',
       description: '中国领先的电子商务平台',
       url: 'https://www.taobao.com',
-      category: '购物'
+      categories: ['购物', '网络服务']
     },
     {
       id: '3',
       title: '知乎',
       description: '中文互联网高质量的问答社区和创作者聚集原创内容平台',
       url: 'https://www.zhihu.com',
-      category: '社交'
+      categories: ['社交', '网络服务']
     },
     {
       id: '4',
       title: 'GitHub',
       description: '全球最大的代码托管平台',
       url: 'https://github.com',
-      category: '开发'
+      categories: ['开发', '网络服务']
     },
     {
       id: '5',
       title: 'bilibili',
       description: '国内知名的视频弹幕网站',
       url: 'https://www.bilibili.com',
-      category: '娱乐'
+      categories: ['娱乐', '网络服务']
     }
   ];
 
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bookmarks', initialBookmarks);
-  const [newBookmark, setNewBookmark] = useState({ title: '', description: '', url: '', category: '' });
+  const [newBookmark, setNewBookmark] = useState({ title: '', description: '', url: '', categories: [] as string[] });
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  
 
   useEffect(() => {
-    const uniqueCategories = Array.from(new Set(bookmarks.map(bookmark => bookmark.category)));
+    const uniqueCategories = Array.from(new Set(bookmarks.flatMap(bookmark => bookmark.categories)));
     setCategories(uniqueCategories);
   }, [bookmarks]);
 
@@ -101,21 +102,29 @@ export default function Home() {
     e.preventDefault();
     const id = Date.now().toString();
     setBookmarks((prevBookmarks: Bookmark[]) => [...prevBookmarks, { id, ...newBookmark }]);
-    setNewBookmark({ title: '', description: '', url: '', category: '' });
+    setNewBookmark({ title: '', description: '', url: '', categories: [] as string[] });
   };
 
   const handleEdit = (id: string, newData: Partial<Bookmark>) => {
-    setBookmarks(bookmarks.map(bookmark => 
-      bookmark.id === id ? { ...bookmark, ...newData } : bookmark
-    ))
+    setBookmarks(prevBookmarks => {
+      const updatedBookmarks = prevBookmarks.map(bookmark => 
+        bookmark.id === id ? { ...bookmark, ...newData } : bookmark
+      );
+      const uniqueCategories = Array.from(new Set(updatedBookmarks.flatMap(bookmark => bookmark.categories)));
+      setCategories(uniqueCategories);
+      return updatedBookmarks;
+    });
   }
 
   const handleDelete = (id: string) => {
     setBookmarks(bookmarks.filter(bookmark => bookmark.id !== id))
   }
 
-  const filteredBookmarks = selectedCategory
-    ? bookmarks.filter(bookmark => bookmark.category === selectedCategory)
+  const filteredBookmarks = selectedCategories.length > 0
+    ? bookmarks.filter(bookmark => 
+        Array.isArray(bookmark.categories) && 
+        bookmark.categories.some(cat => selectedCategories.includes(cat))
+      )
     : bookmarks;
 
   return (
@@ -158,11 +167,11 @@ export default function Home() {
                 />
               </div>
               <div>
-                <Label htmlFor="category">分类</Label>
+                <Label htmlFor="categories">分类（用逗号分隔多个分类）</Label>
                 <Input
-                  id="category"
-                  value={newBookmark.category}
-                  onChange={(e) => setNewBookmark({...newBookmark, category: e.target.value})}
+                  id="categories"
+                  value={newBookmark.categories.join(', ')}
+                  onChange={(e) => setNewBookmark({...newBookmark, categories: e.target.value.split(',').map(cat => cat.trim())})}
                   required
                 />
               </div>
@@ -172,18 +181,20 @@ export default function Home() {
         </Dialog>
       </nav>
       
-      <div className="flex space-x-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4">
         <Button
-          variant={selectedCategory === null ? "default" : "outline"}
-          onClick={() => setSelectedCategory(null)}
+          variant={selectedCategories.length === 0 ? "default" : "outline"}
+          onClick={() => setSelectedCategories([])}
         >
           全部
         </Button>
         {categories.map(category => (
           <Button
             key={category}
-            variant={selectedCategory === category ? "default" : "outline"}
-            onClick={() => setSelectedCategory(category)}
+            variant={selectedCategories.includes(category) ? "default" : "outline"}
+            onClick={() => setSelectedCategories(prev => 
+              prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
+            )}
           >
             {category}
           </Button>

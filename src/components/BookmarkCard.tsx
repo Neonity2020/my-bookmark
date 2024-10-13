@@ -12,14 +12,14 @@ interface BookmarkCardProps {
   title: string
   description: string
   url: string
-  category: string
-  onEdit: (id: string, newData: { title: string; description: string; url: string }) => void
+  categories: string[] // 将单个 category 改为 categories 数组
+  onEdit: (id: string, newData: { title: string; description: string; url: string; categories: string[] }) => void
   onDelete: (id: string) => void
 }
 
-export function BookmarkCard({ id, title, description, url, category, onEdit, onDelete }: BookmarkCardProps) {
+export function BookmarkCard({ id, title, description, url, categories = [], onEdit, onDelete }: BookmarkCardProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editedData, setEditedData] = useState({ title, description, url, category })
+  const [editedData, setEditedData] = useState({ title, description, url, categories: categories || [] })
 
   const handleSave = () => {
     onEdit(id, editedData)
@@ -29,7 +29,7 @@ export function BookmarkCard({ id, title, description, url, category, onEdit, on
   const faviconUrl = `${new URL(url).origin}/favicon.ico` 
 
   const handleCancel = () => {
-    setEditedData({ title, description, url, category })
+    setEditedData({ title, description, url, categories })
     setIsEditing(false)
   }
 
@@ -54,6 +54,12 @@ export function BookmarkCard({ id, title, description, url, category, onEdit, on
             value={editedData.url} 
             onChange={(e) => setEditedData({ ...editedData, url: e.target.value })} 
             placeholder="网站URL"
+            className="mb-2"
+          />
+          <Input 
+            value={editedData.categories.join(', ')} 
+            onChange={(e) => setEditedData({ ...editedData, categories: e.target.value.split(',').map(cat => cat.trim()) })} 
+            placeholder="分类（用逗号分隔）"
           />
         </CardContent>
         <CardFooter>
@@ -85,9 +91,9 @@ export function BookmarkCard({ id, title, description, url, category, onEdit, on
               placeholder="描述"
             />
             <Input
-              value={editedData.category}
-              onChange={(e) => setEditedData({ ...editedData, category: e.target.value })}
-              placeholder="分类"
+              value={editedData.categories.join(', ')}
+              onChange={(e) => setEditedData({ ...editedData, categories: e.target.value.split(',').map(cat => cat.trim()) })}
+              placeholder="分类（用逗号分隔）"
             />
           </div>
         ) : (
@@ -98,7 +104,13 @@ export function BookmarkCard({ id, title, description, url, category, onEdit, on
             </div>
             <p className="text-sm text-gray-500 mb-2">{description}</p>
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{url}</a>
-            <p className="text-sm text-gray-400 mt-2">分类: {category}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {(categories || []).map((category, index) => (
+                <span key={index} className="px-2 py-1 bg-gray-200 rounded-full text-xs text-gray-700">
+                  {category}
+                </span>
+              ))}
+            </div>
           </>
         )}
       </CardContent>
