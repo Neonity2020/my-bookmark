@@ -172,10 +172,10 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto px-4">
-      <nav className="flex items-center justify-between py-4">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+      <nav className="flex flex-col sm:flex-row items-center justify-between py-4 space-y-4 sm:space-y-0">
         <h1 className="text-2xl font-bold">我的网址导航</h1>
-        <div className="space-x-2">
+        <div className="flex flex-wrap justify-center sm:justify-end gap-2">
           <Button onClick={() => downloadJsonFile(bookmarks)}>下载书签</Button>
           <Button onClick={() => fileInputRef.current?.click()}>导入书签</Button>
           <input
@@ -189,30 +189,32 @@ export default function Home() {
             <DialogTrigger asChild>
               <Button>添加网站</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>添加新网站</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleAddBookmark} className="space-y-4">
-                <div>
-                  <Label htmlFor="title">标题</Label>
-                  <Input
-                    id="title"
-                    value={newBookmark.title}
-                    onChange={(e) => setNewBookmark({...newBookmark, title: e.target.value})}
-                    required
-                  />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">标题</Label>
+                    <Input
+                      id="title"
+                      value={newBookmark.title}
+                      onChange={(e) => setNewBookmark({...newBookmark, title: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="url">URL</Label>
+                    <Input
+                      id="url"
+                      value={newBookmark.url}
+                      onChange={(e) => setNewBookmark({...newBookmark, url: e.target.value})}
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="url">URL</Label>
-                  <Input
-                    id="url"
-                    value={newBookmark.url}
-                    onChange={(e) => setNewBookmark({...newBookmark, url: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="description">描述</Label>
                   <Input
                     id="description"
@@ -220,7 +222,7 @@ export default function Home() {
                     onChange={(e) => setNewBookmark({...newBookmark, description: e.target.value})}
                   />
                 </div>
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="categories">分类（用逗号分隔多个分类）</Label>
                   <Input
                     id="categories"
@@ -229,17 +231,18 @@ export default function Home() {
                     required
                   />
                 </div>
-                <Button type="submit">添加</Button>
+                <Button type="submit" className="w-full">添加</Button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
       </nav>
       
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
         <Button
           variant={selectedCategories.length === 0 ? "default" : "outline"}
           onClick={() => setSelectedCategories([])}
+          className="mb-2 sm:mb-0"
         >
           全部
         </Button>
@@ -247,9 +250,8 @@ export default function Home() {
           <Button
             key={category}
             variant={selectedCategories.includes(category) ? "default" : "outline"}
-            onClick={() => setSelectedCategories(prev => 
-              prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
-            )}
+            onClick={() => handleCategoryClick(category)}
+            className="mb-2 sm:mb-0"
           >
             {category}
           </Button>
@@ -257,7 +259,7 @@ export default function Home() {
       </div>
 
       {isLoaded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
           {filteredBookmarks.map(bookmark => (
             <BookmarkCard 
               key={bookmark.id}
