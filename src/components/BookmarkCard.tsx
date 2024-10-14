@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { FaviconImage } from '@/components/Favicon'
+import { Favicon } from '@/components/Favicon'
 
 interface BookmarkCardProps {
   id: string
@@ -98,7 +98,7 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
         ) : (
           <>
             <div className="flex items-center space-x-2 mb-2">
-              <FaviconImage url={url} />
+              <Favicon url={url} />
               <h3 className="text-lg font-semibold">{title}</h3>
             </div>
             <p className="text-sm text-gray-500 mb-2">{description}</p>

@@ -1,40 +1,47 @@
-import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
-interface FaviconImageProps {
-  url: string
-  size?: number
+interface FaviconProps {
+  url: string;
+  size?: number;
 }
 
-export function FaviconImage({ url, size = 16 }: FaviconImageProps) {
-  const [faviconUrl, setFaviconUrl] = useState<string | null>(null)
+export function Favicon({ url, size = 16 }: FaviconProps) {
+  const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const getFavicon = () => {
+    const getFaviconUrl = () => {
       try {
-        const domain = new URL(url).origin
-        // 直接使用网站的favicon
-        setFaviconUrl(`${domain}/favicon.ico`)
-      } catch (error) {
-        console.error('Error getting favicon:', error)
-        setFaviconUrl(null)
+        const urlObject = new URL(url);
+        return `${urlObject.protocol}//${urlObject.hostname}/favicon.ico`;
+      } catch {
+        return null;
       }
-    }
+    };
 
-    getFavicon()
-  }, [url, size])
+    setFaviconUrl(getFaviconUrl());
+  }, [url]);
 
-  if (!faviconUrl) {
-    return null
-  }
+  const handleError = () => {
+    setFaviconUrl('/default-favicon.png'); // 确保在public文件夹中有一个默认的favicon图标
+  };
 
   return (
-    <Image
-      src={faviconUrl}
-      alt={`Favicon for ${url}`}
-      width={size}
-      height={size}
-      className="rounded-sm"
-    />
-  )
+    <div className="relative" style={{ width: size, height: size }}>
+      {faviconUrl ? (
+        <Image
+          src={faviconUrl}
+          alt="Favicon"
+          width={size}
+          height={size}
+          onError={handleError}
+          className="rounded-sm object-contain"
+        />
+      ) : (
+        <div className="w-full h-full bg-gray-200 rounded-sm flex items-center justify-center">
+          <span className="text-xs text-gray-500">?</span>
+        </div>
+      )}
+    </div>
+  );
 }
