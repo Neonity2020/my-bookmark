@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from 'react'
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,9 +15,10 @@ interface BookmarkCardProps {
   categories: string[] // 将单个 category 改为 categories 数组
   onEdit: (id: string, newData: { title: string; description: string; url: string; categories: string[] }) => void
   onDelete: (id: string) => void
+  onCategoryClick: (category: string) => void  // 添加这个新属性
 }
 
-export function BookmarkCard({ id, title, description, url, categories = [], onEdit, onDelete }: BookmarkCardProps) {
+export function BookmarkCard({ id, title, description, url, categories = [], onEdit, onDelete, onCategoryClick }: BookmarkCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedData, setEditedData] = useState({ title, description, url, categories: categories || [] })
 
@@ -25,8 +26,6 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
     onEdit(id, editedData)
     setIsEditing(false)
   }
-
-  const faviconUrl = `${new URL(url).origin}/favicon.ico` 
 
   const handleCancel = () => {
     setEditedData({ title, description, url, categories })
@@ -105,8 +104,12 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
             <p className="text-sm text-gray-500 mb-2">{description}</p>
             <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{url}</a>
             <div className="flex flex-wrap gap-2 mt-2">
-              {(categories || []).map((category, index) => (
-                <span key={index} className="px-2 py-1 bg-gray-200 rounded-full text-xs text-gray-700">
+              {categories.map((category, index) => (
+                <span 
+                  key={index} 
+                  className="px-2 py-1 bg-gray-200 rounded-full text-xs text-gray-700 cursor-pointer hover:bg-gray-300"
+                  onClick={() => onCategoryClick(category)}
+                >
                   {category}
                 </span>
               ))}

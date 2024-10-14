@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BookmarkCard } from "@/components/BookmarkCard"
@@ -41,6 +41,23 @@ const useLocalStorage = <T,>(key: string, initialValue: T): [T, React.Dispatch<R
 
   return [state, setState]
 }
+
+const generateJsonFile = (data: Bookmark[]): string => {
+  return JSON.stringify(data, null, 2);
+};
+
+const downloadJsonFile = (bookmarks: Bookmark[]) => {
+  const jsonContent = generateJsonFile(bookmarks);
+  const blob = new Blob([jsonContent], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'bookmarks.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
 
 export default function Home() {
   const initialBookmarks: Bookmark[] = [
@@ -87,6 +104,27 @@ export default function Home() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImportBookmarks = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedBookmarks = JSON.parse(e.target?.result as string);
+          if (Array.isArray(importedBookmarks)) {
+            setBookmarks((prevBookmarks) => [...prevBookmarks, ...importedBookmarks]);
+          } else {
+            console.error('导入的文件格式不正确');
+          }
+        } catch (error) {
+          console.error('解析导入的文件时出错:', error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
   useEffect(() => {
     const uniqueCategories = Array.from(new Set(bookmarks.flatMap(bookmark => bookmark.categories)));
@@ -127,58 +165,75 @@ export default function Home() {
       )
     : bookmarks;
 
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
+    );
+  };
+
   return (
     <div className="container mx-auto px-4">
       <nav className="flex items-center justify-between py-4">
         <h1 className="text-2xl font-bold">我的网址导航</h1>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>添加网站</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>添加新网站</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddBookmark} className="space-y-4">
-              <div>
-                <Label htmlFor="title">标题</Label>
-                <Input
-                  id="title"
-                  value={newBookmark.title}
-                  onChange={(e) => setNewBookmark({...newBookmark, title: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="url">URL</Label>
-                <Input
-                  id="url"
-                  value={newBookmark.url}
-                  onChange={(e) => setNewBookmark({...newBookmark, url: e.target.value})}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">描述</Label>
-                <Input
-                  id="description"
-                  value={newBookmark.description}
-                  onChange={(e) => setNewBookmark({...newBookmark, description: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="categories">分类（用逗号分隔多个分类）</Label>
-                <Input
-                  id="categories"
-                  value={newBookmark.categories.join(', ')}
-                  onChange={(e) => setNewBookmark({...newBookmark, categories: e.target.value.split(',').map(cat => cat.trim())})}
-                  required
-                />
-              </div>
-              <Button type="submit">添加</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="space-x-2">
+          <Button onClick={() => downloadJsonFile(bookmarks)}>下载书签</Button>
+          <Button onClick={() => fileInputRef.current?.click()}>导入书签</Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleImportBookmarks}
+            accept=".json"
+          />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>添加网站</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>添加新网站</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddBookmark} className="space-y-4">
+                <div>
+                  <Label htmlFor="title">标题</Label>
+                  <Input
+                    id="title"
+                    value={newBookmark.title}
+                    onChange={(e) => setNewBookmark({...newBookmark, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="url">URL</Label>
+                  <Input
+                    id="url"
+                    value={newBookmark.url}
+                    onChange={(e) => setNewBookmark({...newBookmark, url: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">描述</Label>
+                  <Input
+                    id="description"
+                    value={newBookmark.description}
+                    onChange={(e) => setNewBookmark({...newBookmark, description: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="categories">分类（用逗号分隔多个分类）</Label>
+                  <Input
+                    id="categories"
+                    value={newBookmark.categories.join(', ')}
+                    onChange={(e) => setNewBookmark({...newBookmark, categories: e.target.value.split(',').map(cat => cat.trim())})}
+                    required
+                  />
+                </div>
+                <Button type="submit">添加</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </nav>
       
       <div className="flex flex-wrap gap-2 mb-4">
@@ -209,6 +264,7 @@ export default function Home() {
               {...bookmark}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onCategoryClick={handleCategoryClick}
             />
           ))}
         </div>
