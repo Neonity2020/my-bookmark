@@ -1,3 +1,13 @@
+## A costomizable bookmark app, deployed at https://neo-bookmark.netlify.app/
+
+## Features
+
+- Local Storage for bookmarks and categories
+- Customizable bookmark categories
+- Search bookmarks by title or URL
+- Add, edit, delete bookmarks
+- Add, edit, delete bookmark categories
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
