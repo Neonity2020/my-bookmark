@@ -102,7 +102,15 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
               <h3 className="text-lg font-semibold">{title}</h3>
             </div>
             <p className="text-sm text-gray-500 mb-2">{description}</p>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{url}</a>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline truncate block"
+              title={url} // 添加 title 属性以在悬停时显示完整 URL
+            >
+              {url}
+            </a>
             <div className="flex flex-wrap gap-2 mt-2">
               {categories.map((category, index) => (
                 <span 

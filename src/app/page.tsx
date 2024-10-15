@@ -187,7 +187,7 @@ export default function Home() {
           />
           <Dialog>
             <DialogTrigger asChild>
-              <Button>添加网站</Button>
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white">添加网站</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
@@ -231,7 +231,7 @@ export default function Home() {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">添加</Button>
+                <Button type="submit" className="w-full" disabled={!newBookmark.title || !newBookmark.url || !newBookmark.categories.length}>添加</Button>
               </form>
             </DialogContent>
           </Dialog>
