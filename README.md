@@ -1,4 +1,6 @@
-## A costomizable bookmark app, deployed at https://neo-bookmark.netlify.app/
+## Learning in Progress: A costomizable bookmark app
+
+Deployed at https://neo-bookmark.netlify.app/
 
 ## Features
 
