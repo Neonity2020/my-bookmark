@@ -103,7 +103,8 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImportBookmarks = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,6 +165,13 @@ export default function Home() {
         bookmark.categories.some(cat => selectedCategories.includes(cat))
       )
     : bookmarks;
+
+  // 添加搜索过滤逻辑
+  const searchFilteredBookmarks = filteredBookmarks.filter(bookmark =>
+    bookmark.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bookmark.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    bookmark.url.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCategoryClick = (category: string) => {
     setSelectedCategories(prev => 
@@ -238,6 +246,16 @@ export default function Home() {
         </div>
       </nav>
       
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="搜索书签..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
       <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
         <Button
           variant={selectedCategories.length === 0 ? "default" : "outline"}
@@ -260,7 +278,7 @@ export default function Home() {
 
       {isLoaded && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
-          {filteredBookmarks.map(bookmark => (
+          {searchFilteredBookmarks.map(bookmark => (
             <BookmarkCard 
               key={bookmark.id}
               {...bookmark}
