@@ -28,18 +28,22 @@ export function BookmarkList() {
     ]);
   }, []);
 
-  const handleMoveUp = (id: string) => {
+  const handleMoveUp = (_id: string) => {
     // 实现上移逻辑
+    console.log(`尝试上移书签: ${_id}`);
+    // 这里可以添加实际的上移逻辑
   };
 
-  const handleMoveDown = (id: string) => {
+  const handleMoveDown = (_id: string) => {
     // 实现下移逻辑
+    console.log(`尝试下移书签: ${_id}`);
+    // 这里可以添加实际的下移逻辑
   };
 
-  const handleEdit = (id: string, updatedBookmark: Partial<Bookmark>) => {
+  const handleEdit = (id: string, newData: Partial<Bookmark>) => {
     setBookmarks(prevBookmarks => 
       prevBookmarks.map(bookmark => 
-        bookmark.id === id ? { ...bookmark, ...updatedBookmark } : bookmark
+        bookmark.id === id ? { ...bookmark, ...newData } : bookmark
       )
     );
   };
@@ -53,12 +57,10 @@ export function BookmarkList() {
     setBookmarks(prevBookmarks => prevBookmarks.filter(bookmark => bookmark.id !== id));
   };
 
-  const handleAddToCollection = (bookmarkId: string, collectionId: string) => {
+  const handleAddToCollection = (_id: string, collectionId: string) => {
     // 在这里添加处理添加到收藏夹的逻辑
-    console.log(`添加到收藏夹: ${bookmarkId} -> ${collectionId}`);
+    console.log(`添加到收藏夹: ${_id} -> ${collectionId}`);
   };
-
-  // ... 其他处理函数 ...
 
   return (
     <div className="space-y-4">
@@ -77,9 +79,10 @@ export function BookmarkList() {
           collections={collections}
           onAddToCollection={handleAddToCollection}
           isBookmarked={bookmark.isBookmarked}
-          onToggleBookmark={(id) => {
+          onToggleBookmark={(_id) => {
             // 在这里更新书签的收藏状态
-            // 例如：updateBookmarkStatus(id, !bookmark.isBookmarked)
+            console.log(`切换书签状态: ${_id}`);
+            // 例如：updateBookmarkStatus(_id, !bookmark.isBookmarked)
           }}
         />
       ))}

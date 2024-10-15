@@ -107,7 +107,6 @@ export default function Home() {
   ];
 
   const [bookmarks, setBookmarks] = useLocalStorage<Bookmark[]>('bookmarks', initialBookmarks);
-  const [newBookmark, setNewBookmark] = useState({ title: '', description: '', url: '', categories: [] as string[] });
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -377,7 +376,7 @@ export default function Home() {
 
       {deletedBookmark && (
         <div className="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg flex items-center">
-          <span className="mr-2">已删除 "{deletedBookmark.title}"</span>
+          <span className="mr-2">已删除 &quot;{deletedBookmark.title}&quot;</span>
           <Button onClick={handleUndoDelete} variant="outline" size="sm">
             撤销
           </Button>

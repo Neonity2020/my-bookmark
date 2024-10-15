@@ -9,7 +9,7 @@ import { Favicon } from '@/components/Favicon'
 import { ChevronUp, ChevronDown, Pencil, Trash2, Star } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collection } from '@/types/Collection'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+
 
 // 添加 Bookmark 类型定义
 interface Bookmark {
@@ -53,7 +53,6 @@ export function BookmarkCard({
   onMoveDown, 
   isFirst,
   isLast,
-  totalBookmarks,
   collections,
   onAddToCollection,
   isBookmarked,
