@@ -6,19 +6,59 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Favicon } from '@/components/Favicon'
+import { ChevronUp, ChevronDown, Pencil, Trash2, Star } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Collection } from '@/types/Collection'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-interface BookmarkCardProps {
-  id: string
-  title: string
-  description: string
-  url: string
-  categories: string[] // 将单个 category 改为 categories 数组
-  onEdit: (id: string, newData: { title: string; description: string; url: string; categories: string[] }) => void
-  onDelete: (id: string) => void
-  onCategoryClick: (category: string) => void  // 添加这个新属性
+// 添加 Bookmark 类型定义
+interface Bookmark {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  categories: string[];
 }
 
-export function BookmarkCard({ id, title, description, url, categories = [], onEdit, onDelete, onCategoryClick }: BookmarkCardProps) {
+interface BookmarkCardProps {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  categories: string[];
+  onEdit: (id: string, newData: Partial<Bookmark>) => void;
+  onDelete: (id: string) => void;
+  onCategoryClick: (category: string) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+  totalBookmarks: number;
+  collections: Collection[];
+  onAddToCollection: (bookmarkId: string, collectionId: string) => void;
+  isBookmarked: boolean;
+  onToggleBookmark: (id: string) => void;
+}
+
+export function BookmarkCard({ 
+  id, 
+  title, 
+  description, 
+  url, 
+  categories = [], 
+  onEdit, 
+  onDelete, 
+  onCategoryClick, 
+  onMoveUp, 
+  onMoveDown, 
+  isFirst,
+  isLast,
+  totalBookmarks,
+  collections,
+  onAddToCollection,
+  isBookmarked,
+  onToggleBookmark
+}: BookmarkCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedData, setEditedData] = useState({ title, description, url, categories: categories || [] })
   const [isExpanded, setIsExpanded] = useState(false)
@@ -37,6 +77,10 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength) + '...';
   }
+
+  const handleToggleBookmark = () => {
+    onToggleBookmark(id);
+  };
 
   if (isEditing) {
     return (
@@ -76,84 +120,123 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
   }
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        {isEditing ? (
-          <div className="space-y-2">
-            <Input
-              value={editedData.title}
-              onChange={(e) => setEditedData({ ...editedData, title: e.target.value })}
-              placeholder="标题"
-            />
-            <Input
-              value={editedData.url}
-              onChange={(e) => setEditedData({ ...editedData, url: e.target.value })}
-              placeholder="URL"
-            />
-            <Input
-              value={editedData.description}
-              onChange={(e) => setEditedData({ ...editedData, description: e.target.value })}
-              placeholder="描述"
-            />
-            <Input
-              value={editedData.categories.join(', ')}
-              onChange={(e) => setEditedData({ ...editedData, categories: e.target.value.split(',').map(cat => cat.trim()) })}
-              placeholder="分类（用逗号分隔）"
-            />
+    <Card className="w-full flex flex-col">
+      <CardContent className="p-4 flex-grow">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center space-x-2 max-w-[calc(100%-80px)]">
+            <Favicon url={url} />
+            <h3 className="text-lg font-semibold truncate" title={title}>{title}</h3>
           </div>
-        ) : (
-          <>
-            <div className="flex items-center space-x-2 mb-2">
-              <Favicon url={url} />
-              <h3 className="text-lg font-semibold">{title}</h3>
-            </div>
-            <p className="text-sm text-gray-500 mb-2">
-              {isExpanded ? description : truncateDescription(description, 100)}
-              {description.length > 100 && (
-                <Button
-                  variant="link"
-                  className="p-0 h-auto font-normal"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? '收起' : '展开'}
-                </Button>
-              )}
-            </p>
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:underline truncate block"
-              title={url} // 添加 title 属性以在悬停时显示完整 URL
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMoveUp}
+              disabled={isFirst}
+              title="左移"
+              className="h-8 w-8"
             >
-              {url}
-            </a>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {categories.map((category, index) => (
-                <span 
-                  key={index} 
-                  className="px-2 py-1 bg-gray-200 rounded-full text-xs text-gray-700 cursor-pointer hover:bg-gray-300"
-                  onClick={() => onCategoryClick(category)}
-                >
-                  {category}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
+              <ChevronUp className="h-4 w-4 rotate-[-90deg]" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onMoveDown}
+              disabled={isLast}
+              title="右移"
+              className="h-8 w-8"
+            >
+              <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-3"></div>
+        
+        <p className="text-sm mb-2">
+          {isExpanded ? description : truncateDescription(description, 100)}
+          {description.length > 100 && (
+            <Button
+              variant="link"
+              className="p-0 h-auto font-normal"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? '收起' : '展开'}
+            </Button>
+          )}
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline truncate block mb-2"
+          title={url}
+        >
+          {url}
+        </a>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category, index) => (
+            <span 
+              key={index} 
+              className="px-2 py-1 bg-blue-200 dark:bg-blue-700 rounded-full text-xs cursor-pointer hover:bg-blue-300 dark:hover:bg-blue-600 transition-colors duration-200"
+              onClick={() => onCategoryClick(category)}
+            >
+              {category}
+            </span>
+          ))}
+        </div>
       </CardContent>
-      <CardFooter className="p-4">
-        {isEditing ? (
-          <>
-            <Button onClick={handleSave} className="mr-2">保存</Button>
-            <Button variant="outline" onClick={() => setIsEditing(false)}>取消</Button>
-          </>
-        ) : (
-          <>
-            <Button onClick={() => setIsEditing(true)} className="mr-2">编辑</Button>
-            <Button variant="destructive" onClick={() => onDelete(id)}>删除</Button>
-          </>
-        )}
+      <CardFooter className="flex justify-between items-center px-4 py-2 border-t bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className={`${isBookmarked ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-600 p-1`}
+                onClick={handleToggleBookmark}
+              >
+                <Star className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48">
+              {collections && collections.length > 0 ? (
+                collections.map(collection => (
+                  <Button
+                    key={collection.id}
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => onAddToCollection(id, collection.id)}
+                  >
+                    {collection.name}
+                  </Button>
+                ))
+              ) : (
+                <div className="p-2 text-center text-sm text-gray-500">没有可用的收藏夹</div>
+              )}
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditing(true)}
+            title="编辑"
+            className="p-1"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(id)}
+            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 p-1"
+            title="删除"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { BookmarkCard } from "@/components/BookmarkCard"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { PlusIcon } from "@radix-ui/react-icons"
+import { AddBookmarkForm } from "@/components/AddBookmarkForm"
 
 interface Bookmark {
   id: string;
@@ -13,6 +15,12 @@ interface Bookmark {
   description: string;
   url: string;
   categories: string[]; // 确保这是一个非空数组
+}
+
+interface Collection {
+  id: string;
+  name: string;
+  bookmarkIds: string[]; // 添加这个属性
 }
 
 const useLocalStorage = <T,>(key: string, initialValue: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
@@ -78,7 +86,7 @@ export default function Home() {
     {
       id: '3',
       title: '知乎',
-      description: '中文互联网高质量的问答社区和创作者聚集原创内容平台',
+      description: '中文互联网质量的问答社区和创作者聚集原创内容平台',
       url: 'https://www.zhihu.com',
       categories: ['社交', '网络服务']
     },
@@ -104,6 +112,9 @@ export default function Home() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [collections, setCollections] = useLocalStorage<Collection[]>('collections', [
+    { id: '1', name: '默认文件夹', bookmarkIds: [] },
+  ]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -137,11 +148,9 @@ export default function Home() {
     setIsLoaded(true);
   }, []);
 
-  const handleAddBookmark = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleAddBookmark = (newBookmark: Omit<Bookmark, 'id'>) => {
     const id = Date.now().toString();
     setBookmarks((prevBookmarks: Bookmark[]) => [...prevBookmarks, { id, ...newBookmark }]);
-    setNewBookmark({ title: '', description: '', url: '', categories: [] as string[] });
   };
 
   const handleEdit = (id: string, newData: Partial<Bookmark>) => {
@@ -155,8 +164,19 @@ export default function Home() {
     });
   }
 
+  const [deletedBookmark, setDeletedBookmark] = useState<Bookmark | null>(null);
+
   const handleDelete = (id: string) => {
-    setBookmarks(bookmarks.filter(bookmark => bookmark.id !== id))
+    const bookmarkToDelete = bookmarks.find(bookmark => bookmark.id === id);
+    setBookmarks(bookmarks.filter(bookmark => bookmark.id !== id));
+    setDeletedBookmark(bookmarkToDelete || null);
+  }
+
+  const handleUndoDelete = () => {
+    if (deletedBookmark) {
+      setBookmarks(prevBookmarks => [...prevBookmarks, deletedBookmark]);
+      setDeletedBookmark(null);
+    }
   }
 
   const filteredBookmarks = selectedCategories.length > 0
@@ -179,10 +199,65 @@ export default function Home() {
     );
   };
 
+  const handleAddToCollection = (bookmarkId: string, collectionId: string) => {
+    setCollections(prevCollections => 
+      prevCollections.map(collection => 
+        collection.id === collectionId
+          ? { ...collection, bookmarkIds: collection.bookmarkIds.includes(bookmarkId) ? collection.bookmarkIds : [...collection.bookmarkIds, bookmarkId] }
+          : collection
+      )
+    );
+  };
+
+  const handleCreateCollection = (name: string) => {
+    const newCollection: Collection = {
+      id: Date.now().toString(),
+      name,
+      bookmarkIds: [],
+    };
+    setCollections(prevCollections => [...prevCollections, newCollection]);
+  };
+
+  const handleMoveUp = (id: string) => {
+    setBookmarks(prevBookmarks => {
+      const index = prevBookmarks.findIndex(bookmark => bookmark.id === id);
+      if (index > 0) {
+        const newBookmarks = [...prevBookmarks];
+        [newBookmarks[index - 1], newBookmarks[index]] = [newBookmarks[index], newBookmarks[index - 1]];
+        return newBookmarks;
+      }
+      return prevBookmarks;
+    });
+  };
+
+  const handleMoveDown = (id: string) => {
+    setBookmarks(prevBookmarks => {
+      const index = prevBookmarks.findIndex(bookmark => bookmark.id === id);
+      if (index < prevBookmarks.length - 1) {
+        const newBookmarks = [...prevBookmarks];
+        [newBookmarks[index], newBookmarks[index + 1]] = [newBookmarks[index + 1], newBookmarks[index]];
+        return newBookmarks;
+      }
+      return prevBookmarks;
+    });
+  };
+
+  useEffect(() => {
+    localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+  }, [bookmarks]);
+
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
+
+  const handleToggleBookmark = (id: string) => {
+    setBookmarkedIds(prev => 
+      prev.includes(id) ? prev.filter(bookmarkId => bookmarkId !== id) : [...prev, id]
+    );
+  };
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
       <nav className="flex flex-col sm:flex-row items-center justify-between py-4 space-y-4 sm:space-y-0">
-        <h1 className="text-2xl font-bold">我的网址导航</h1>
+        <h1 className="text-2xl font-bold">我的网址导航 - 打造一个简洁的网址导航</h1>
         <div className="flex flex-wrap justify-center sm:justify-end gap-2">
           <Button onClick={() => downloadJsonFile(bookmarks)}>下载书签</Button>
           <Button onClick={() => fileInputRef.current?.click()}>导入书签</Button>
@@ -195,52 +270,13 @@ export default function Home() {
           />
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white">添加网站</Button>
+              <Button className="bg-blue-500 hover:bg-blue-600 text-white hidden sm:inline-flex">添加网站</Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>添加新网站</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleAddBookmark} className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">标题</Label>
-                    <Input
-                      id="title"
-                      value={newBookmark.title}
-                      onChange={(e) => setNewBookmark({...newBookmark, title: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="url">URL</Label>
-                    <Input
-                      id="url"
-                      value={newBookmark.url}
-                      onChange={(e) => setNewBookmark({...newBookmark, url: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">描述</Label>
-                  <Input
-                    id="description"
-                    value={newBookmark.description}
-                    onChange={(e) => setNewBookmark({...newBookmark, description: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="categories">分类（用逗号分隔多个分类）</Label>
-                  <Input
-                    id="categories"
-                    value={newBookmark.categories.join(', ')}
-                    onChange={(e) => setNewBookmark({...newBookmark, categories: e.target.value.split(',').map(cat => cat.trim())})}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={!newBookmark.title || !newBookmark.url || !newBookmark.categories.length}>添加</Button>
-              </form>
+              <AddBookmarkForm onSubmit={handleAddBookmark} />
             </DialogContent>
           </Dialog>
         </div>
@@ -276,19 +312,95 @@ export default function Home() {
         ))}
       </div>
 
+      {/* 添加收藏夹管理部分 */}
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">收藏夹</h2>
+        <div className="flex flex-wrap gap-2">
+          {collections.map(collection => (
+            <Button
+              key={collection.id}
+              variant="outline"
+              onClick={() => {/* 实现显示收藏夹内容的功能 */}}
+            >
+              {collection.name} ({collection.bookmarkIds.length})
+            </Button>
+          ))}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">新建收藏夹</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新建收藏夹</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const name = (e.target as HTMLFormElement).collectionName.value;
+                handleCreateCollection(name);
+                (e.target as HTMLFormElement).reset();
+              }}>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="collectionName">收藏夹名称</Label>
+                    <Input id="collectionName" required />
+                  </div>
+                  <Button type="submit">创建</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
       {isLoaded && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
-          {searchFilteredBookmarks.map(bookmark => (
+          {searchFilteredBookmarks.map((bookmark, index) => (
             <BookmarkCard 
               key={bookmark.id}
               {...bookmark}
+              isBookmarked={bookmarkedIds.includes(bookmark.id)}
+              onToggleBookmark={() => handleToggleBookmark(bookmark.id)}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onCategoryClick={handleCategoryClick}
+              onMoveUp={() => handleMoveUp(bookmark.id)}
+              onMoveDown={() => handleMoveDown(bookmark.id)}
+              isFirst={index === 0}
+              isLast={index === searchFilteredBookmarks.length - 1}
+              totalBookmarks={searchFilteredBookmarks.length}
+              collections={collections}
+              onAddToCollection={handleAddToCollection}
             />
           ))}
         </div>
       )}
+
+      {deletedBookmark && (
+        <div className="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg flex items-center">
+          <span className="mr-2">已删除 "{deletedBookmark.title}"</span>
+          <Button onClick={handleUndoDelete} variant="outline" size="sm">
+            撤销
+          </Button>
+        </div>
+      )}
+
+      {/* 添加移动端浮动按钮 */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button
+            className="fixed bottom-4 left-1/2 transform -translate-x-1/2 rounded-full w-16 h-16 sm:hidden flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+            size="icon"
+          >
+            <PlusIcon className="h-8 w-8" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>添加新网站</DialogTitle>
+          </DialogHeader>
+          <AddBookmarkForm onSubmit={handleAddBookmark} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
