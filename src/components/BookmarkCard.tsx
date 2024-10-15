@@ -21,6 +21,7 @@ interface BookmarkCardProps {
 export function BookmarkCard({ id, title, description, url, categories = [], onEdit, onDelete, onCategoryClick }: BookmarkCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedData, setEditedData] = useState({ title, description, url, categories: categories || [] })
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const handleSave = () => {
     onEdit(id, editedData)
@@ -30,6 +31,11 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
   const handleCancel = () => {
     setEditedData({ title, description, url, categories })
     setIsEditing(false)
+  }
+
+  const truncateDescription = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
   }
 
   if (isEditing) {
@@ -101,7 +107,18 @@ export function BookmarkCard({ id, title, description, url, categories = [], onE
               <Favicon url={url} />
               <h3 className="text-lg font-semibold">{title}</h3>
             </div>
-            <p className="text-sm text-gray-500 mb-2">{description}</p>
+            <p className="text-sm text-gray-500 mb-2">
+              {isExpanded ? description : truncateDescription(description, 100)}
+              {description.length > 100 && (
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-normal"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? '收起' : '展开'}
+                </Button>
+              )}
+            </p>
             <a
               href={url}
               target="_blank"
