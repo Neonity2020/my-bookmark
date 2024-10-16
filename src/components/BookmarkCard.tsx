@@ -27,18 +27,18 @@ interface BookmarkCardProps {
   description: string;
   url: string;
   categories: string[];
-  onEdit: (id: string, newData: Partial<Bookmark>) => void;
-  onDelete: (id: string) => void;
-  onCategoryClick: (category: string) => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onCategoryClick?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   isFirst: boolean;
   isLast: boolean;
   totalBookmarks: number;
   collections: Collection[];
   onAddToCollection: (bookmarkId: string, collectionId: string) => void;
   isBookmarked: boolean;
-  onToggleBookmark: (id: string, collectionId: string | null) => void;
+  onToggleBookmark: () => void;
 }
 
 export function BookmarkCard({ 
@@ -80,7 +80,8 @@ export function BookmarkCard({
   }
 
   const handleToggleBookmark = () => {
-    onToggleBookmark(id, null);
+    onToggleBookmark();
+    setIsDropdownOpen(false);
   };
 
   const handleBookmarkClick = () => {
@@ -197,20 +198,12 @@ export function BookmarkCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {isBookmarked ? (
-                <DropdownMenuItem onSelect={() => onToggleBookmark(id, null)}>
-                  取消收藏
-                </DropdownMenuItem>
-              ) : null}
               {collections.map((collection) => (
                 <DropdownMenuItem
                   key={collection.id}
-                  onSelect={() => {
-                    onToggleBookmark(id, collection.id);
-                    setIsDropdownOpen(false);
-                  }}
+                  onSelect={() => handleToggleBookmark(collection.id)}
                 >
-                  {isBookmarked && collection.bookmarkIds.includes(id) 
+                  {collection.bookmarkIds.includes(id) 
                     ? `从 ${collection.name} 移除` 
                     : `添加到 ${collection.name}`}
                 </DropdownMenuItem>
@@ -236,6 +229,14 @@ export function BookmarkCard({
             title="删除"
           >
             <Trash2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleBookmark}
+            className={isBookmarked ? "text-yellow-500" : "text-gray-500"}
+          >
+            <StarIcon className="h-4 w-4" />
           </Button>
         </div>
       </CardFooter>

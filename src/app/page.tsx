@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { PlusIcon } from "@radix-ui/react-icons"
 import { AddBookmarkForm } from "@/components/AddBookmarkForm"
 import { useToast } from "@/hooks/use-toast"
+import { TrashIcon } from "@radix-ui/react-icons"
 
 interface Bookmark {
   id: string;
@@ -117,6 +118,7 @@ export default function Home() {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [isNewCollectionDialogOpen, setIsNewCollectionDialogOpen] = useState(false);
   const [defaultCollectionId, setDefaultCollectionId] = useState<string>('');
+  const [currentCollectionId, setCurrentCollectionId] = useState<string>(defaultCollectionId);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -237,7 +239,7 @@ export default function Home() {
       if (isNameExist) {
         toast({
           title: "创建失败",
-          description: "已存在同名收藏夹，请使用其他名称。",
+          description: "已存在同名收藏夹请使用其他名称。",
           variant: "destructive",
         });
         return;
@@ -289,39 +291,29 @@ export default function Home() {
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
 
   const handleToggleBookmark = (id: string, collectionId: string | null) => {
-    if (collectionId) {
-      // 添加到指定收藏夹或从指定收藏夹中移除
-      setCollections(prevCollections => 
-        prevCollections.map(collection => 
-          collection.id === collectionId
-            ? {
-                ...collection,
-                bookmarkIds: collection.bookmarkIds.includes(id)
-                  ? collection.bookmarkIds.filter(bookmarkId => bookmarkId !== id)
-                  : [...collection.bookmarkIds, id]
-              }
-            : collection
-        )
-      );
-    } else {
-      // 从所有收藏夹中移除
-      setCollections(prevCollections => 
-        prevCollections.map(collection => ({
-          ...collection,
-          bookmarkIds: collection.bookmarkIds.filter(bookmarkId => bookmarkId !== id)
-        }))
-      );
-    }
+    setCollections(prevCollections => 
+      prevCollections.map(collection => {
+        if (collection.id === (collectionId || defaultCollectionId)) {
+          const isCurrentlyBookmarked = collection.bookmarkIds.includes(id);
+          return {
+            ...collection,
+            bookmarkIds: isCurrentlyBookmarked
+              ? collection.bookmarkIds.filter(bookmarkId => bookmarkId !== id)
+              : [...collection.bookmarkIds, id]
+          };
+        }
+        return collection;
+      })
+    );
 
     // 更新 bookmarkedIds 状态
     setBookmarkedIds(prev => {
       const isCurrentlyBookmarked = prev.includes(id);
-      if (isCurrentlyBookmarked && !collectionId) {
+      if (isCurrentlyBookmarked) {
         return prev.filter(bookmarkId => bookmarkId !== id);
-      } else if (!isCurrentlyBookmarked && collectionId) {
+      } else {
         return [...prev, id];
       }
-      return prev;
     });
   };
 
@@ -338,7 +330,7 @@ export default function Home() {
         const newDefaultCollection: Collection = {
           id: 'default',
           name: '默认收藏夹',
-          bookmarkIds: [], // 初始化为空数组
+          bookmarkIds: [], // 初始���为空数组
         };
         setCollections(prev => [...prev, newDefaultCollection]);
         setDefaultCollectionId('default');
@@ -365,6 +357,27 @@ export default function Home() {
       localStorage.setItem('collections', JSON.stringify(collections));
     }
   }, [collections, isCollectionsLoaded]);
+
+  const currentCollection = collections.find(c => c.id === currentCollectionId);
+  const displayedBookmarks = currentCollection
+    ? bookmarks.filter(b => currentCollection.bookmarkIds.includes(b.id))
+    : bookmarks;
+
+  const handleDeleteCollection = (collectionId: string) => {
+    if (collectionId === defaultCollectionId) {
+      toast({
+        title: "无法删除",
+        description: "默认收藏夹不能被删除。",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setCollections(prevCollections => prevCollections.filter(c => c.id !== collectionId));
+    if (currentCollectionId === collectionId) {
+      setCurrentCollectionId(defaultCollectionId);
+    }
+  };
 
   return (
     <>
@@ -467,24 +480,29 @@ export default function Home() {
 
         {isLoaded && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
-            {filteredBookmarks.map((bookmark, index) => (
-              <BookmarkCard 
-                key={bookmark.id}
-                {...bookmark}
-                isBookmarked={bookmarkedIds.includes(bookmark.id)}
-                onToggleBookmark={() => handleToggleBookmark(bookmark.id, null)}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onCategoryClick={handleCategoryClick}
-                onMoveUp={() => handleMoveUp(bookmark.id)}
-                onMoveDown={() => handleMoveDown(bookmark.id)}
-                isFirst={index === 0}
-                isLast={index === filteredBookmarks.length - 1}
-                totalBookmarks={filteredBookmarks.length}
-                collections={collections}
-                onAddToCollection={handleAddToCollection}
-              />
-            ))}
+            {displayedBookmarks.map((bookmark, index) => {
+              const isBookmarked = collections.some(collection => 
+                collection.bookmarkIds.includes(bookmark.id)
+              );
+              return (
+                <BookmarkCard 
+                  key={bookmark.id}
+                  {...bookmark}
+                  isBookmarked={currentCollection?.bookmarkIds.includes(bookmark.id) || false}
+                  onToggleBookmark={() => handleToggleBookmark(bookmark.id, currentCollectionId)}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onCategoryClick={handleCategoryClick}
+                  onMoveUp={() => handleMoveUp(bookmark.id)}
+                  onMoveDown={() => handleMoveDown(bookmark.id)}
+                  isFirst={index === 0}
+                  isLast={index === displayedBookmarks.length - 1}
+                  totalBookmarks={displayedBookmarks.length}
+                  collections={collections}
+                  onAddToCollection={handleAddToCollection}
+                />
+              );
+            })}
           </div>
         )}
 
