@@ -5,10 +5,11 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Favicon } from '@/components/Favicon'
 import { ChevronUp, ChevronDown, Pencil, Trash2, Star } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collection } from '@/types/Collection'
+import { ClickableTitle } from '@/components/ClickableTitle'
+import Link from "@/components/Link"
 
 
 // 添加 Bookmark 类型定义
@@ -122,9 +123,8 @@ export function BookmarkCard({
     <Card className="w-full flex flex-col">
       <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-center mb-3">
-          <div className="flex items-center space-x-2 max-w-[calc(100%-80px)]">
-            <Favicon url={url} />
-            <h3 className="text-lg font-semibold truncate" title={title}>{title}</h3>
+        <div className="flex-grow mr-2 min-w-0">
+            <ClickableTitle url={url} title={title} />
           </div>
           <div className="flex items-center space-x-1">
             <Button
@@ -164,15 +164,9 @@ export function BookmarkCard({
             </Button>
           )}
         </p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:underline truncate block mb-2"
-          title={url}
-        >
+        <Link href={url} external className="hover:underline truncate block mb-2" title={url}>
           {url}
-        </a>
+        </Link>
         <div className="flex flex-wrap gap-2">
           {categories.map((category, index) => (
             <span 

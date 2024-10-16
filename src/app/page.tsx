@@ -254,152 +254,155 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-      <nav className="flex flex-col sm:flex-row items-center justify-between py-4 space-y-4 sm:space-y-0">
-        <h1 className="text-2xl font-bold">我的网址导航 - 打造一个简洁的网址导航</h1>
-        <div className="flex flex-wrap justify-center sm:justify-end gap-2">
-          <Button onClick={() => downloadJsonFile(bookmarks)}>下载书签</Button>
-          <Button onClick={() => fileInputRef.current?.click()}>导入书签</Button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            onChange={handleImportBookmarks}
-            accept=".json"
-          />
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white hidden sm:inline-flex">添加网站</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>添加新网站</DialogTitle>
-              </DialogHeader>
-              <AddBookmarkForm onSubmit={handleAddBookmark} />
-            </DialogContent>
-          </Dialog>
-        </div>
-      </nav>
-      
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="搜索书签..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full"
-        />
-      </div>
+    <>
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
 
-      <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
-        <Button
-          variant={selectedCategories.length === 0 ? "default" : "outline"}
-          onClick={() => setSelectedCategories([])}
-          className="mb-2 sm:mb-0"
-        >
-          全部
-        </Button>
-        {categories.map(category => (
+        <nav className="flex flex-col sm:flex-row items-center justify-between py-4 space-y-4 sm:space-y-0">
+
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2">
+            <Button onClick={() => downloadJsonFile(bookmarks)}>下载书签</Button>
+            <Button onClick={() => fileInputRef.current?.click()}>导入书签</Button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleImportBookmarks}
+              accept=".json"
+            />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="bg-blue-500 hover:bg-blue-600 text-white hidden sm:inline-flex">添加网站</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>添加新网站</DialogTitle>
+                </DialogHeader>
+                <AddBookmarkForm onSubmit={handleAddBookmark} />
+              </DialogContent>
+            </Dialog>
+          </div>
+        </nav>
+        
+        <div className="mb-4">
+          <Input
+            type="text"
+            placeholder="搜索书签..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
           <Button
-            key={category}
-            variant={selectedCategories.includes(category) ? "default" : "outline"}
-            onClick={() => handleCategoryClick(category)}
+            variant={selectedCategories.length === 0 ? "default" : "outline"}
+            onClick={() => setSelectedCategories([])}
             className="mb-2 sm:mb-0"
           >
-            {category}
+            全部
           </Button>
-        ))}
-      </div>
-
-      {/* 添加收藏夹管理部分 */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">收藏夹</h2>
-        <div className="flex flex-wrap gap-2">
-          {collections.map(collection => (
+          {categories.map(category => (
             <Button
-              key={collection.id}
-              variant="outline"
-              onClick={() => {/* 实现显示收藏夹内容的功能 */}}
+              key={category}
+              variant={selectedCategories.includes(category) ? "default" : "outline"}
+              onClick={() => handleCategoryClick(category)}
+              className="mb-2 sm:mb-0"
             >
-              {collection.name} ({collection.bookmarkIds.length})
+              {category}
             </Button>
           ))}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">新建收藏夹</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>新建收藏夹</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const name = (e.target as HTMLFormElement).collectionName.value;
-                handleCreateCollection(name);
-                (e.target as HTMLFormElement).reset();
-              }}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="collectionName">收藏夹名称</Label>
-                    <Input id="collectionName" required />
+        </div>
+
+        {/* 添加收藏夹管理部分 */}
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">收藏夹</h2>
+          <div className="flex flex-wrap gap-2">
+            {collections.map(collection => (
+              <Button
+                key={collection.id}
+                variant="outline"
+                onClick={() => {/* 实现显示收藏夹内容的功能 */}}
+              >
+                {collection.name} ({collection.bookmarkIds.length})
+              </Button>
+            ))}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">新建收藏夹</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>新建收藏夹</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const name = (e.target as HTMLFormElement).collectionName.value;
+                  handleCreateCollection(name);
+                  (e.target as HTMLFormElement).reset();
+                }}>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="collectionName">收藏夹名称</Label>
+                      <Input id="collectionName" required />
+                    </div>
+                    <Button type="submit">创建</Button>
                   </div>
-                  <Button type="submit">创建</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
+
+        {isLoaded && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
+            {searchFilteredBookmarks.map((bookmark, index) => (
+              <BookmarkCard 
+                key={bookmark.id}
+                {...bookmark}
+                isBookmarked={bookmarkedIds.includes(bookmark.id)}
+                onToggleBookmark={() => handleToggleBookmark(bookmark.id)}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onCategoryClick={handleCategoryClick}
+                onMoveUp={() => handleMoveUp(bookmark.id)}
+                onMoveDown={() => handleMoveDown(bookmark.id)}
+                isFirst={index === 0}
+                isLast={index === searchFilteredBookmarks.length - 1}
+                totalBookmarks={searchFilteredBookmarks.length}
+                collections={collections}
+                onAddToCollection={handleAddToCollection}
+              />
+            ))}
+          </div>
+        )}
+
+        {deletedBookmark && (
+          <div className="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg flex items-center">
+            <span className="mr-2">已删除 &quot;{deletedBookmark.title}&quot;</span>
+            <Button onClick={handleUndoDelete} variant="outline" size="sm">
+              撤销
+            </Button>
+          </div>
+        )}
+
+        {/* 添加移动端浮动按钮 */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              className="fixed bottom-4 left-1/2 transform -translate-x-1/2 rounded-full w-16 h-16 sm:hidden flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+              size="icon"
+            >
+              <PlusIcon className="h-8 w-8" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>添加新网站</DialogTitle>
+            </DialogHeader>
+            <AddBookmarkForm onSubmit={handleAddBookmark} />
+          </DialogContent>
+        </Dialog>
       </div>
-
-      {isLoaded && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
-          {searchFilteredBookmarks.map((bookmark, index) => (
-            <BookmarkCard 
-              key={bookmark.id}
-              {...bookmark}
-              isBookmarked={bookmarkedIds.includes(bookmark.id)}
-              onToggleBookmark={() => handleToggleBookmark(bookmark.id)}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onCategoryClick={handleCategoryClick}
-              onMoveUp={() => handleMoveUp(bookmark.id)}
-              onMoveDown={() => handleMoveDown(bookmark.id)}
-              isFirst={index === 0}
-              isLast={index === searchFilteredBookmarks.length - 1}
-              totalBookmarks={searchFilteredBookmarks.length}
-              collections={collections}
-              onAddToCollection={handleAddToCollection}
-            />
-          ))}
-        </div>
-      )}
-
-      {deletedBookmark && (
-        <div className="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg flex items-center">
-          <span className="mr-2">已删除 &quot;{deletedBookmark.title}&quot;</span>
-          <Button onClick={handleUndoDelete} variant="outline" size="sm">
-            撤销
-          </Button>
-        </div>
-      )}
-
-      {/* 添加移动端浮动按钮 */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button
-            className="fixed bottom-4 left-1/2 transform -translate-x-1/2 rounded-full w-16 h-16 sm:hidden flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
-            size="icon"
-          >
-            <PlusIcon className="h-8 w-8" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>添加新网站</DialogTitle>
-          </DialogHeader>
-          <AddBookmarkForm onSubmit={handleAddBookmark} />
-        </DialogContent>
-      </Dialog>
-    </div>
+    </>
   )
 }
