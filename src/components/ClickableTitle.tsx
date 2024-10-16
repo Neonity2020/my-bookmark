@@ -1,4 +1,5 @@
-import { Favicon } from '@/components/Favicon'
+import React, { useState } from 'react';
+import Link from "@/components/Link";
 
 interface ClickableTitleProps {
   url: string;
@@ -6,18 +7,27 @@ interface ClickableTitleProps {
 }
 
 export function ClickableTitle({ url, title }: ClickableTitleProps) {
+  const [imageError, setImageError] = useState(false);
+
+  const faviconUrl = `https://www.google.com/s2/favicons?domain=${url}&sz=32`;
+
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center space-x-2 max-w-full group"
-      title={title}
-    >
-      <Favicon url={url} />
-      <h3 className="text-lg font-semibold truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+    <div className="flex items-center">
+      {imageError ? (
+        <div className="w-4 h-4 mr-2 flex items-center justify-center text-gray-400 bg-gray-200 rounded">
+          ?
+        </div>
+      ) : (
+        <img
+          src={faviconUrl}
+          alt=""
+          className="w-4 h-4 mr-2"
+          onError={() => setImageError(true)}
+        />
+      )}
+      <Link href={url} external className="text-lg font-semibold hover:underline">
         {title}
-      </h3>
-    </a>
-  )
+      </Link>
+    </div>
+  );
 }

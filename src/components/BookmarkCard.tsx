@@ -5,12 +5,12 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ChevronUp, ChevronDown, Pencil, Trash2, Star } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronUp, ChevronDown, Pencil, Trash2 } from 'lucide-react'
 import { Collection } from '@/types/Collection'
 import { ClickableTitle } from '@/components/ClickableTitle'
 import Link from "@/components/Link"
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { BookmarkIcon } from "@radix-ui/react-icons";
 
 // 添加 Bookmark 类型定义
 interface Bookmark {
@@ -38,7 +38,7 @@ interface BookmarkCardProps {
   collections: Collection[];
   onAddToCollection: (bookmarkId: string, collectionId: string) => void;
   isBookmarked: boolean;
-  onToggleBookmark: (id: string) => void;
+  onToggleBookmark: (id: string, collectionId: string | null) => void;
 }
 
 export function BookmarkCard({ 
@@ -62,6 +62,7 @@ export function BookmarkCard({
   const [isEditing, setIsEditing] = useState(false)
   const [editedData, setEditedData] = useState({ title, description, url, categories: categories || [] })
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleSave = () => {
     onEdit(id, editedData)
@@ -79,7 +80,11 @@ export function BookmarkCard({
   }
 
   const handleToggleBookmark = () => {
-    onToggleBookmark(id);
+    onToggleBookmark(id, null);
+  };
+
+  const handleBookmarkClick = () => {
+    setIsDropdownOpen(true);
   };
 
   if (isEditing) {
@@ -181,34 +186,37 @@ export function BookmarkCard({
       </CardContent>
       <CardFooter className="flex justify-between items-center px-4 py-2 border-t bg-gray-50 dark:bg-gray-800">
         <div className="flex items-center">
-          <Popover>
-            <PopoverTrigger asChild>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
               <Button 
-                variant="ghost" 
+                variant={isBookmarked ? "default" : "outline"}
                 size="sm"
-                className={`${isBookmarked ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-600 p-1`}
-                onClick={handleToggleBookmark}
+                onClick={handleBookmarkClick}
               >
-                <Star className="h-4 w-4" fill={isBookmarked ? "currentColor" : "none"} />
+                <BookmarkIcon className={isBookmarked ? "fill-current" : ""} />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48">
-              {collections && collections.length > 0 ? (
-                collections.map(collection => (
-                  <Button
-                    key={collection.id}
-                    variant="ghost"
-                    className="w-full justify-start"
-                    onClick={() => onAddToCollection(id, collection.id)}
-                  >
-                    {collection.name}
-                  </Button>
-                ))
-              ) : (
-                <div className="p-2 text-center text-sm text-gray-500">没有可用的收藏夹</div>
-              )}
-            </PopoverContent>
-          </Popover>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {isBookmarked ? (
+                <DropdownMenuItem onSelect={() => onToggleBookmark(id, null)}>
+                  取消收藏
+                </DropdownMenuItem>
+              ) : null}
+              {collections.map((collection) => (
+                <DropdownMenuItem
+                  key={collection.id}
+                  onSelect={() => {
+                    onToggleBookmark(id, collection.id);
+                    setIsDropdownOpen(false);
+                  }}
+                >
+                  {isBookmarked && collection.bookmarkIds.includes(id) 
+                    ? `从 ${collection.name} 移除` 
+                    : `添加到 ${collection.name}`}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="flex items-center space-x-1">
           <Button

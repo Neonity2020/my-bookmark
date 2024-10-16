@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { PlusIcon } from "@radix-ui/react-icons"
 import { AddBookmarkForm } from "@/components/AddBookmarkForm"
+import { useToast } from "@/hooks/use-toast"
 
 interface Bookmark {
   id: string;
   title: string;
   description: string;
   url: string;
-  categories: string[]; // 确保这是一个非空数组
+  categories: string[];
 }
 
 interface Collection {
@@ -74,35 +75,35 @@ export default function Home() {
       title: '百度',
       description: '中国最大的搜索引擎',
       url: 'https://www.baidu.com',
-      categories: ['搜索引擎', '网络服务']
+      categories: ['搜索引擎', '网络服务'],
     },
     {
       id: '2',
       title: '淘宝',
-      description: '中国领先的电子商务平台',
+      description: '中国领先的电子务平台',
       url: 'https://www.taobao.com',
-      categories: ['购物', '网络服务']
+      categories: ['购物', '网络服务'],
     },
     {
       id: '3',
       title: '知乎',
       description: '中文互联网质量的问答社区和创作者聚集原创内容平台',
       url: 'https://www.zhihu.com',
-      categories: ['社交', '网络服务']
+      categories: ['社交', '网络服务'],
     },
     {
       id: '4',
       title: 'GitHub',
       description: '全球最大的代码托管平台',
       url: 'https://github.com',
-      categories: ['开发', '网络服务']
+      categories: ['开发', '网络服务'],
     },
     {
       id: '5',
       title: 'bilibili',
       description: '国内知名的视频弹幕网站',
       url: 'https://www.bilibili.com',
-      categories: ['娱乐', '网络服务']
+      categories: ['娱乐', '网络服务'],
     }
   ];
 
@@ -111,11 +112,15 @@ export default function Home() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [collections, setCollections] = useLocalStorage<Collection[]>('collections', [
-    { id: '1', name: '默认文件夹', bookmarkIds: [] },
-  ]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [isCollectionsLoaded, setIsCollectionsLoaded] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [isNewCollectionDialogOpen, setIsNewCollectionDialogOpen] = useState(false);
+  const [defaultCollectionId, setDefaultCollectionId] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { toast } = useToast()
 
   const handleImportBookmarks = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -125,12 +130,33 @@ export default function Home() {
         try {
           const importedBookmarks = JSON.parse(e.target?.result as string);
           if (Array.isArray(importedBookmarks)) {
-            setBookmarks((prevBookmarks) => [...prevBookmarks, ...importedBookmarks]);
+            // 清除当前书签并设置导入的书签
+            setBookmarks(importedBookmarks);
+            // 更新收藏夹中的书签ID
+            setCollections(prevCollections => 
+              prevCollections.map(collection => ({
+                ...collection,
+                bookmarkIds: collection.id === defaultCollectionId ? importedBookmarks.map(b => b.id) : []
+              }))
+            );
+            toast({
+              title: "导入成功",
+              description: `已成功导入 ${importedBookmarks.length} 个书签。`,
+            });
           } else {
-            console.error('导入的文件格式不正确');
+            toast({
+              title: "导入失败",
+              description: "导入的文件格式不正确。",
+              variant: "destructive",
+            });
           }
         } catch (error) {
-          console.error('解析导入的文件时出错:', error);
+          console.error('解析导入的文件时错:', error);
+          toast({
+            title: "导入失败",
+            description: "解析文件时出错，请确保文件格式正确。",
+            variant: "destructive",
+          });
         }
       };
       reader.readAsText(file);
@@ -149,7 +175,9 @@ export default function Home() {
 
   const handleAddBookmark = (newBookmark: Omit<Bookmark, 'id'>) => {
     const id = Date.now().toString();
-    setBookmarks((prevBookmarks: Bookmark[]) => [...prevBookmarks, { id, ...newBookmark }]);
+    const bookmarkWithId = { id, ...newBookmark };
+    setBookmarks((prevBookmarks: Bookmark[]) => [...prevBookmarks, bookmarkWithId]);
+    
   };
 
   const handleEdit = (id: string, newData: Partial<Bookmark>) => {
@@ -185,13 +213,6 @@ export default function Home() {
       )
     : bookmarks;
 
-  // 添加搜索过滤逻辑
-  const searchFilteredBookmarks = filteredBookmarks.filter(bookmark =>
-    bookmark.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bookmark.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    bookmark.url.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const handleCategoryClick = (category: string) => {
     setSelectedCategories(prev => 
       prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
@@ -208,13 +229,33 @@ export default function Home() {
     );
   };
 
-  const handleCreateCollection = (name: string) => {
-    const newCollection: Collection = {
-      id: Date.now().toString(),
-      name,
-      bookmarkIds: [],
-    };
-    setCollections(prevCollections => [...prevCollections, newCollection]);
+  const handleCreateCollection = () => {
+    const trimmedName = newCollectionName.trim();
+    if (trimmedName) {
+      const isNameExist = collections.some(collection => collection.name.toLowerCase() === trimmedName.toLowerCase());
+      
+      if (isNameExist) {
+        toast({
+          title: "创建失败",
+          description: "已存在同名收藏夹，请使用其他名称。",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const newCollection: Collection = {
+        id: Date.now().toString(),
+        name: trimmedName,
+        bookmarkIds: [],
+      };
+      setCollections(prevCollections => [...prevCollections, newCollection]);
+      setNewCollectionName('');
+      setIsNewCollectionDialogOpen(false);
+      toast({
+        title: "创建成功",
+        description: `已成功创建收藏夹 "${trimmedName}"。`,
+      });
+    }
   };
 
   const handleMoveUp = (id: string) => {
@@ -247,11 +288,83 @@ export default function Home() {
 
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([]);
 
-  const handleToggleBookmark = (id: string) => {
-    setBookmarkedIds(prev => 
-      prev.includes(id) ? prev.filter(bookmarkId => bookmarkId !== id) : [...prev, id]
-    );
+  const handleToggleBookmark = (id: string, collectionId: string | null) => {
+    if (collectionId) {
+      // 添加到指定收藏夹或从指定收藏夹中移除
+      setCollections(prevCollections => 
+        prevCollections.map(collection => 
+          collection.id === collectionId
+            ? {
+                ...collection,
+                bookmarkIds: collection.bookmarkIds.includes(id)
+                  ? collection.bookmarkIds.filter(bookmarkId => bookmarkId !== id)
+                  : [...collection.bookmarkIds, id]
+              }
+            : collection
+        )
+      );
+    } else {
+      // 从所有收藏夹中移除
+      setCollections(prevCollections => 
+        prevCollections.map(collection => ({
+          ...collection,
+          bookmarkIds: collection.bookmarkIds.filter(bookmarkId => bookmarkId !== id)
+        }))
+      );
+    }
+
+    // 更新 bookmarkedIds 状态
+    setBookmarkedIds(prev => {
+      const isCurrentlyBookmarked = prev.includes(id);
+      if (isCurrentlyBookmarked && !collectionId) {
+        return prev.filter(bookmarkId => bookmarkId !== id);
+      } else if (!isCurrentlyBookmarked && collectionId) {
+        return [...prev, id];
+      }
+      return prev;
+    });
   };
+
+  useEffect(() => {
+    // 在客户端加载收藏夹数据
+    const storedCollections = localStorage.getItem('collections');
+    if (storedCollections) {
+      const parsedCollections = JSON.parse(storedCollections);
+      setCollections(parsedCollections);
+      
+      // 检查是否存在默认收藏夹，如果不存在则创建
+      const defaultCollection = parsedCollections.find((c: Collection) => c.name === '默认收藏夹');
+      if (!defaultCollection) {
+        const newDefaultCollection: Collection = {
+          id: 'default',
+          name: '默认收藏夹',
+          bookmarkIds: [], // 初始化为空数组
+        };
+        setCollections(prev => [...prev, newDefaultCollection]);
+        setDefaultCollectionId('default');
+      } else {
+        setDefaultCollectionId(defaultCollection.id);
+        // 设置已收藏的书签ID
+        setBookmarkedIds(defaultCollection.bookmarkIds);
+      }
+    } else {
+      const defaultCollection: Collection = {
+        id: 'default',
+        name: '默认收藏夹',
+        bookmarkIds: [], // 初始化为空数组
+      };
+      setCollections([defaultCollection]);
+      setDefaultCollectionId('default');
+    }
+    setIsCollectionsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+
+    if (isCollectionsLoaded) {
+      localStorage.setItem('collections', JSON.stringify(collections));
+    }
+  }, [collections, isCollectionsLoaded]);
 
   return (
     <>
@@ -320,13 +433,14 @@ export default function Home() {
             {collections.map(collection => (
               <Button
                 key={collection.id}
-                variant="outline"
+                variant={collection.id === defaultCollectionId ? "default" : "outline"}
                 onClick={() => {/* 实现显示收藏夹内容的功能 */}}
               >
                 {collection.name} ({collection.bookmarkIds.length})
+                {collection.id === defaultCollectionId && " (默认)"}
               </Button>
             ))}
-            <Dialog>
+            <Dialog open={isNewCollectionDialogOpen} onOpenChange={setIsNewCollectionDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">新建收藏夹</Button>
               </DialogTrigger>
@@ -334,20 +448,18 @@ export default function Home() {
                 <DialogHeader>
                   <DialogTitle>新建收藏夹</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  const name = (e.target as HTMLFormElement).collectionName.value;
-                  handleCreateCollection(name);
-                  (e.target as HTMLFormElement).reset();
-                }}>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="collectionName">收藏夹名称</Label>
-                      <Input id="collectionName" required />
-                    </div>
-                    <Button type="submit">创建</Button>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="collectionName">收藏夹名称</Label>
+                    <Input 
+                      id="collectionName" 
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      required 
+                    />
                   </div>
-                </form>
+                  <Button onClick={handleCreateCollection}>创建</Button>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -355,20 +467,20 @@ export default function Home() {
 
         {isLoaded && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8">
-            {searchFilteredBookmarks.map((bookmark, index) => (
+            {filteredBookmarks.map((bookmark, index) => (
               <BookmarkCard 
                 key={bookmark.id}
                 {...bookmark}
                 isBookmarked={bookmarkedIds.includes(bookmark.id)}
-                onToggleBookmark={() => handleToggleBookmark(bookmark.id)}
+                onToggleBookmark={() => handleToggleBookmark(bookmark.id, null)}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onCategoryClick={handleCategoryClick}
                 onMoveUp={() => handleMoveUp(bookmark.id)}
                 onMoveDown={() => handleMoveDown(bookmark.id)}
                 isFirst={index === 0}
-                isLast={index === searchFilteredBookmarks.length - 1}
-                totalBookmarks={searchFilteredBookmarks.length}
+                isLast={index === filteredBookmarks.length - 1}
+                totalBookmarks={filteredBookmarks.length}
                 collections={collections}
                 onAddToCollection={handleAddToCollection}
               />
@@ -403,6 +515,7 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       </div>
-    </>
+      
+  </>
   )
 }
